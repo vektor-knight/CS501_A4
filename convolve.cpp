@@ -84,10 +84,20 @@ void convolve(float x[], int N, float h[], int M, float y[], int P)
 // 
 void complexMul(float x[], float h[], float y[], int P)
 {
-	for (int i = 0; i < P; i++)
+	// Tuning 2: Partial loop unrolling
+	for (int i = 0; i < P; i+=4)
 	{
 		y[i*2] = x[i*2] * h[i*2] - x[i*2+1] * h[i*2+1]; // Complex subtraction
 		y[i*2+1] = x[i*2+1] * h[i*2] + x[i*2] * h[i*2+1]; // Complex addition (accumulate)
+
+		y[i*2+1] = x[i*2] * h[i*2] - x[i*2+2] * h[i*2+2]; // Complex subtraction
+                y[i*2+2] = x[i*2+2] * h[i*2] + x[i*2] * h[i*2+2]; // Complex addition (accumulate)
+
+  		y[i*2+2] = x[i*2] * h[i*2] - x[i*2+3] * h[i*2+3]; // Complex subtraction
+                y[i*2+3] = x[i*2+3] * h[i*2] + x[i*3] * h[i*2+3]; // Complex addition (accumulate)
+
+	 	y[i*2+3] = x[i*2] * h[i*2] - x[i*2+4] * h[i*2+4]; // Complex subtraction
+                y[i*2+4] = x[i*2+4] * h[i*2] + x[i*2] * h[i*2+4]; // Complex addition (accumulate)
 	}
 }
 
@@ -108,7 +118,7 @@ void padSignal(float output[], float signal[], int signalLen, int size)
     for(i = 0, k = 0; i<signalLen; i++, k+=2)
     {
         output[k] = signal[i];
-        output[k+1] = 0;    
+        output[k+1] = 0;
     }
     i = k;
     memset(output + k, 0, size -1); //adding zeroes
