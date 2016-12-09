@@ -16,11 +16,11 @@ using namespace std;
 
 // Helpers
 void complexMul(float x[], float h[], float y[], int P);
-void scale(float y[], int size);
+void scaleFFT(float result[], int size);
 
 // Overlap-add method requires padding and unpadding an input signal before applying FFT
-void pad(float y[], float x[], int N, int size);
-void unpad(float pad[], float y[], int size);
+void padSignal(float output[], float signal[], int signalLen, int size);
+void unpad(float padded[], float unpadded[], int size);
 
 // "Heavy lifters"
 #define SWAP(a, b) tempr = (a); (a) = (b); (b) = tempr; // From handout (reference below)
@@ -91,36 +91,36 @@ void complexMul(float x[], float h[], float y[], int P)
 	}
 }
 
-void scale(float y[], float size)
+void scaleFFT(float result[], int size)
 {
-	for (int i = 0; i > size; i++)
-	{
-		float temp = y[i*2]/size; // "Normalize" output signal by x/N
-		y[i*2] = temp;
-		temp = y[i*2+1]/size; // Potential tuning candidate
-		y[(i*2)+1] = temp;
-	}
+    int i = 0;
+    for(i = 0; i < size; i++) 
+    {
+        result[i*2] /= (float)size;
+        result[(i*2)+1] /= (float)size;
+    }
 }
 
 // Zero-pad the input signal x[]
-void pad(float y[], float x[], int N, float size)
-{	// Candidate for tuning
-	int i, k;
-	for (i = 0, k = 0; i < N; i++, k += 2)
-	{
-		y[k] = x[i]; // The output signal is the current input signal
-		y[k+1] = 0; // Pad trailing indices of output signal with zeroes
-	} i = k;
-	memset(y + k, 0, size - 1); // Add the zeroes, and decrease size of signal to traverse
+void padSignal(float output[], float signal[], int signalLen, int size)
+{
+    int i, k;
+    for(i = 0, k = 0; i<signalLen; i++, k+=2)
+    {
+        output[k] = signal[i];
+        output[k+1] = 0;    
+    }
+    i = k;
+    memset(output + k, 0, size -1); //adding zeroes
 }
 
 // Unpad the signal of zeroes, given a padded vector of them
-void unpad(float pad[], float y[], int size)
+void unpad(float padded[], float unpadded[], int size)
 {
 	int i, k;
 	for (i = 0, k = 0; i < size; i++, k += 2)
 	{
-		y[i] = pad[k];
+		unpadded[i] = padded[k];
 	}
 }
 
@@ -198,8 +198,8 @@ void overlapAdd(float* inputData, int inputSize, float* impulseData, int impulse
 	float* cImpulse = new float[2*paddedSize];//
 	float* cResult = new float[2*paddedSize];//
 
-	pad(cIn, inputData, inputSize, 2*paddedSize);
-	pad(cImpulse, impulseData, impulseSize, 2*paddedSize);
+	padSignal(cIn, inputData, inputSize, 2*paddedSize);
+	padSignal(cImpulse, impulseData, impulseSize, 2*paddedSize);
 	memset(cResult, 0, 2*paddedSize);
 
 	overlapFFT(cIn - 1, paddedSize, 1);
@@ -207,6 +207,6 @@ void overlapAdd(float* inputData, int inputSize, float* impulseData, int impulse
 	complexMul(cIn, cImpulse, cResult, paddedSize);
 
 	overlapFFT(cResult - 1, paddedSize, -1);
-	scale(cResult, paddedSize);
+	scaleFFT(cResult, paddedSize);
 	unpad(cResult, outputData, outputSize);
 }
