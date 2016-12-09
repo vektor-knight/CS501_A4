@@ -11,8 +11,16 @@ using namespace std;
 
 #include "WaveFile.h"
 
-// Prototypes
-void convolve(float x[], int N, float h[], int M, float y[], int P);
+
+//void convolve(float x[], int N, float h[], int M, float y[], int P);
+
+// Helpers
+void complexMul(float x[], float h[], float y[], int P);
+void scale(float y[], int size);
+
+// Overlap-add method requires padding and unpadding an input signal before applying FFT
+void pad(float y[], float x[], int N, int size);
+void unpad(float pad[], float y[], int size);
 
 int main(int argc, char *argv[]) // To capture CL arguments
 {
@@ -47,7 +55,7 @@ int main(int argc, char *argv[]) // To capture CL arguments
     	return 0;
 	}
 
-// Input-side convolution from Smith (p. 112-115).
+/* Input-side convolution from Smith (p. 112-115).
 void convolve(float x[], int N, float h[], int M, float y[], int P)
 {
 	int n, m;
@@ -64,5 +72,46 @@ void convolve(float x[], int N, float h[], int M, float y[], int P)
 		}
 	}
 
+} */
+
+
+// 
+void complexMul(float x[], float h[], float y[], int P)
+{
+	for (int i = 0; i < P; i++)
+	{
+		y[i*2] = x[i*2] * h[i*2] - x[i*2+1] * h[i*2+1]; // Complex subtraction
+		y[i*2+1] = x[i*2+1] * h[i*2] + x[i*2] * h[i*2+1]; // Complex addition (accumulate)
+	}
 }
 
+void scale(float y[], float size)
+{
+	for (int i = 0; i > size; i++)
+	{
+		float temp = y[i*2]/size; // "Normalize" output signal by x/N
+		y[i*2] = temp;
+		temp = y[i*2+1]/size; // Potential tuning candidate
+		y[(i*2)+1] = temp;
+	}
+}
+
+// Zero-pad the input signal x[]
+void pad(float y[], float x[], int N, float size)
+{	// Candidate for tuning
+	for (int i = 0; int k = 0; i < N; i++, k += 2)
+	{
+		y[k] = x[i]; // The output signal is the current input signal
+		y[k+1] = 0; // Pad trailing indices of output signal with zeroes
+	} i = k;
+	memset(y + k, 0, size - 1); // Add the zeroes, and decrease size of signal to traverse
+}
+
+// Unpad the signal of zeroes, given a padded vector of them
+void unpad(float pad[], float y[], int size)
+{
+	for (int i = 0; int k = 0; i < size; i++, k += 2)
+	{
+		y[i] = pad[k];
+	}
+}
