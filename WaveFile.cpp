@@ -4,6 +4,9 @@
 // file will only be used for "regression testing", insofar as making
 // sure that the optimized code is still functioning correctyl for FFT version.
 
+// // Was also used as a black-box to print command-line messages denoting what
+// point of a WAVE file has been reached during execution.
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
