@@ -24,6 +24,7 @@ void unpad(float padded[], float unpadded[], int size);
 
 // "Heavy lifters"
 #define SWAP(a, b) tempr = (a); (a) = (b); (b) = tempr; // From handout (reference below)
+#define PI 3.14159265358979
 void overlapAdd(float* inputData, int inputSize, float* impulseData, int impulseSize, float* outputData, int outputSize);
 void overlapFFT(float data[], unsigned long nn, int isign); // From handout (reference below)
 
@@ -164,7 +165,9 @@ void overlapFFT(float data[], unsigned long nn, int isign)
 	while (n > mmax)
 	{
 		istep = mmax << 1;
-		theta = isign * (6.28318530717959/mmax); // Candidate for tuning?
+		// Tuning 3: Store 2*PI as a constant
+		//theta = isign * (6.28318530717959/mmax); // Candidate for tuning?
+		theta = isign * ((2.0*PI)/mmax);
 		wtemp = sin(0.5 * theta);
 		// Tuning 1: -2 -> -2.0 (signed int to double)
 		wpr = -2.0*wtemp*wtemp; // Candidate for tuning? (-2 -> -2.0)
