@@ -156,7 +156,8 @@ void overlapFFT(float data[], unsigned long nn, int isign)
 		istep = mmax << 1;
 		theta = isign * (6.28318530717959/mmax); // Candidate for tuning?
 		wtemp = sin(0.5 * theta);
-		wpr = -2*wtemp*wtemp; // Candidate for tuning? (-2 -> -2.0)
+		// Tuning 1: -2 -> -2.0 (signed int to double)
+		wpr = -2.0*wtemp*wtemp; // Candidate for tuning? (-2 -> -2.0)
 		wpi = sin(theta);
 		wr = 1;
 		wi = 0;
