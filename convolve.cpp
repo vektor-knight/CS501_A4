@@ -48,6 +48,9 @@ int main(int argc, char *argv[]) // To capture CL arguments
 	}
 
 // Input-side convolution from Smith (p. 112-115).
+// Second reference, class handout: convolve(..)
+// Author unknown? convolve.c Dated 11/13/09 11:58:34. Basically this is the
+// most naive DFT that one can do, and was also lectured about (class notes).
 void convolve(float x[], int N, float h[], int M, float y[], int P)
 {
 	int n, m;
