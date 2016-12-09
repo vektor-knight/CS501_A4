@@ -202,8 +202,11 @@ void overlapAdd(float* inputData, int inputSize, float* impulseData, int impulse
 
 	int i = 0;
 	while (paddedSize < size)
-	{
-		paddedSize <<= 1;
+	{	// Is bit-shifting faster than multiplication/division?
+		// Reference: http://stackoverflow.com/questions/6357038/is-multiplication-and-division-using-shift-operators-in-c-actually-faster
+		// Tuning 4: Replace bit-shift with fast mul
+		//paddedSize <<= 1;
+		paddedSize = 2*paddedSize;
 		i++;
 	}
 
