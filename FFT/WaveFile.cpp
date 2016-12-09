@@ -1,6 +1,7 @@
 // New WaveFile.cpp for FFT-specific use case.
 // Referenced from https://raw.githubusercontent.com/rsbarhey/CPSC501-A4/master/V2.0/WaveFile.cpp
-
+// Used as a black-box in terms of regression testing, and matching command-line output against
+// "expected" values after each code tuning.
 
 #include <stdio.h>
 #include <stdlib.h>

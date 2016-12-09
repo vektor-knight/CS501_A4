@@ -1,5 +1,8 @@
-// Header files referenced from:
-// https://raw.githubusercontent.com/rsbarhey/CPSC501-A4/master/V1.0/main.cpp
+// Header files from: http://www.cplusplus.com/reference/
+// Includes followed from compiler errors (particularly cstring)
+// Originally, I had started writing in Visual Studio, and stdlib.h
+// as well as stdio.h are normally refactored into another standard library
+// header.
 #include <cstring>
 #include <ctime>
 #include <fstream>
@@ -12,8 +15,6 @@ using namespace std;
 
 #include "WaveFile.h"
 
-//void convolve(float x[], int N, float h[], int M, float y[], int P);
-
 // Helpers
 void complexMul(float x[], float h[], float y[], int P);
 void scaleFFT(float result[], int size);
@@ -23,7 +24,8 @@ void padSignal(float output[], float signal[], int signalLen, int size);
 void unpad(float padded[], float unpadded[], int size);
 
 // "Heavy lifters"
-#define SWAP(a, b) tempr = (a); (a) = (b); (b) = tempr; // From handout (reference below)
+// SWAP from pg. 507 12.2 Fast Fourir Transform (FFT) class handout
+#define SWAP(a, b) tempr = (a); (a) = (b); (b) = tempr; // Further reference below when it is invoked
 #define PI 3.14159265358979
 void overlapAdd(float* inputData, int inputSize, float* impulseData, int impulseSize, float* outputData, int outputSize);
 void overlapFFT(float data[], unsigned long nn, int isign); // From handout (reference below)
@@ -32,7 +34,8 @@ int main(int argc, char *argv[]) // To capture CL arguments
 {
 	// Main algorithm to capture WAVE file inputs, and output convolved WAVE
 	// referenced from: https://raw.githubusercontent.com/rsbarhey/CPSC501-A4/master/V1.0/main.cpp
-	// Added my own annotations for later FFT development
+	// with credit to Dr. Manzara for the file-reading design pattern (read/write).
+	// Added my own annotations for code tunings 
 	std::clock_t start;
 	start = std::clock();
 
@@ -53,36 +56,26 @@ int main(int argc, char *argv[]) // To capture CL arguments
 	float* outputData = new float[outputSize];
 
 	cout << "Applying FFT" << endl;
-    	//convolve(inputData, inputSize, impulseData, impulseSize, outputData, outputSize);
     	overlapAdd(inputData, inputSize, impulseData, impulseSize, outputData, outputSize);
 	input->writeWaveFile(argv[3], outputSize, outputData);
 
+	// Clock modules referenced from: http://stackoverflow.com/questions/3220477/how-to-use-clock-in-c
+	//  
    	cout << "Time: " << (std::clock() - start) / (double)(CLOCKS_PER_SEC / 1000) << endl;
 
     	return 0;
 	}
 
-/* Input-side convolution from Smith (p. 112-115).
-void convolve(float x[], int N, float h[], int M, float y[], int P)
-{
-	int n, m;
-
-	for (n = 0; n < P; n++)
-	{
-		y[n] = 0.0;
-	}
-	for (n = 0; n < N; n++)
-	{
-		for (m = 0; m < M; m++)
-		{
-			y[n+m] += x[n] * h[m];
-		}
-	}
-
-} */
-
-
-// 
+/*
+* References:
+* Representation of complex arithmetic as presented in Zahra Sahaf's TA slides
+* Prior to tuning, referred to: http://www.thecrazyprogrammer.com/2013/08/c-program-to-add-subtract-multiply-and.html
+* for "setting up" the iteration
+* x[] <- audio input signal
+* h[] <- impulse response signal (to be convolved with x[])
+* y[] <- audio output signal
+* P <- size of the output
+*/
 void complexMul(float x[], float h[], float y[], int P)
 {
 	// Tuning 2: Partial loop unrolling
@@ -95,17 +88,26 @@ void complexMul(float x[], float h[], float y[], int P)
                 y[i*2+2] = x[i*2+2] * h[i*2] + x[i*2] * h[i*2+2]; // Complex addition (accumulate)
 
   		y[i*2+2] = x[i*2] * h[i*2] - x[i*2+3] * h[i*2+3]; // Complex subtraction
-                y[i*2+3] = x[i*2+3] * h[i*2] + x[i*3] * h[i*2+3]; // Complex addition (accumulate)
+                y[i*2+3] = x[i*2+3] * h[i*2] + x[i*2] * h[i*2+3]; // Complex addition (accumulate)
 
 	 	y[i*2+3] = x[i*2] * h[i*2] - x[i*2+4] * h[i*2+4]; // Complex subtraction
                 y[i*2+4] = x[i*2+4] * h[i*2] + x[i*2] * h[i*2+4]; // Complex addition (accumulate)
 	}
 }
 
+/*
+* Required scaling process for FFT algorithms.
+* Takes as input a result[] vector and size of the audio signal,
+* and scales the signal according to the size of the result vector.
+* After trying to get my own function signatures to scale, I was missing
+* the critical part (casting ints to floats), so my compiler errors were
+* of the nature of mismatched function references.
+* Referenced: https://raw.githubusercontent.com/rsbarhey/CPSC501-A4/master/V2.0/main.cpp
+*/
 void scaleFFT(float result[], int size)
 {
     int i = 0;
-    for(i = 0; i < size; i++) 
+    for(i = 0; i < size; i++)
     {
         result[i*2] /= (float)size;
         result[(i*2)+1] /= (float)size;
@@ -113,19 +115,29 @@ void scaleFFT(float result[], int size)
 }
 
 // Zero-pad the input signal x[]
+/*
+* Likewise with scaleFFT(..), I was receiving many compiler errors regarding
+* mismatched function references. 
+* Referenced: https://raw.githubusercontent.com/rsbarhey/CPSC501-A4/master/V2.0/main.cpp
+* https://www.dsprelated.com/freebooks/sasp/Practical_Zero_Padding.html
+*/
 void padSignal(float output[], float signal[], int signalLen, int size)
 {
     int i, k;
-    for(i = 0, k = 0; i<signalLen; i++, k+=2)
+    for(i = 0, k = 0; i<signalLen; i++, k+=2) 
     {
         output[k] = signal[i];
         output[k+1] = 0;
     }
     i = k;
-    memset(output + k, 0, size -1); //adding zeroes
+    memset(output + k, 0, size - 1); //adding zeroes in memory
 }
 
 // Unpad the signal of zeroes, given a padded vector of them
+/*
+* Reverses padSignal(..)
+* Reference: See above (author: rsbarhey, main.cpp)
+*/
 void unpad(float padded[], float unpadded[], int size)
 {
 	int i, k;
@@ -137,6 +149,9 @@ void unpad(float padded[], float unpadded[], int size)
 
 // Reference: Class handout (12.2 Fast Fourier Transform (FFT))
 // Originally cited from "Numerical Recipes in C"; the Danielson-Lanczos Formula
+/*
+* Main "fast" algorithm, using overlap-add technique, with zero-padding.
+*/
 void overlapFFT(float data[], unsigned long nn, int isign)
 {
 	// Use double precision for the trig recurrence during Danielson-Lanczos
@@ -150,7 +165,7 @@ void overlapFFT(float data[], unsigned long nn, int isign)
 	{
 		if (j > i)
 		{
-			SWAP(data[j], data[i]);
+			SWAP(data[j], data[i]); // Invokation of SWAP definition, from pg. 507
 			SWAP(data[j+1], data[i+1]);
 		}
 		m = nn;
@@ -187,13 +202,18 @@ void overlapFFT(float data[], unsigned long nn, int isign)
 				data[i+1] += tempi;
 			}
 			wr = (wtemp = wr) * wpr - wi * wpi + wr; // Trig recurrence
-			wi = wi * wpr + wtemp * wpi + wi;
+			// Tuning 5: Eliminate subexpressions
+			double wi_ = wi*wpr;
+			double wi__ = wtemp * wpi;
+		//	wi = (wi * wpr) + (wtemp * wpi) + wi;
+			wi = wi +  wi_ + wi__;
 		}
 		mmax = istep;
 	}
 }
 
-// Overlap-add component, Smith p. 311-318
+// Overlap-add component, Smith p. 311-318 (class handout)
+// Referenced from: https://raw.githubusercontent.com/rsbarhey/CPSC501-A4/master/V2.0/main.cpp
 void overlapAdd(float* inputData, int inputSize, float* impulseData, int impulseSize, float* outputData, int outputSize)
 {
 	int size = 0;
@@ -210,13 +230,9 @@ void overlapAdd(float* inputData, int inputSize, float* impulseData, int impulse
 		i++;
 	}
 
-	// Setting up padding and complex multiplication
-	// First code tuning: eliminate common sub-expression
-		// eg. Assignment 2*paddedSize to a variable
-
-	float* cIn = new float[2*paddedSize]; //
-	float* cImpulse = new float[2*paddedSize];//
-	float* cResult = new float[2*paddedSize];//
+	float* cIn = new float[2*paddedSize]; 
+	float* cImpulse = new float[2*paddedSize];
+	float* cResult = new float[2*paddedSize];
 
 	padSignal(cIn, inputData, inputSize, 2*paddedSize);
 	padSignal(cImpulse, impulseData, impulseSize, 2*paddedSize);
