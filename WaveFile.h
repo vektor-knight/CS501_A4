@@ -12,22 +12,26 @@ class WaveFile
 public:
         float* ReadInput(char *filename, float *signal, int *Thesize);
         void writeWaveFile(char* fileName, int numSamples, float *size);
-        
-        char *format;
-        int chunkSize;
-        char *chunkID;
-        char *subChunk1ID;
 
-        int16_t blockAlign;
-        int16_t bitsPerSample;
-        int16_t audioFormat;
-        int16_t numChannels;
-        int sampleRate;
+	// Segment 1: "RIFF" chunk descriptor
+        char *chunkID;
+	int chunkSize;
+	char *format;
+
+	// Segment 2: "fmt" sub-chunk
+        char *subChunk1ID;
+	int subChunk1Size;
+	int16_t audioFormat;
+	int16_t numChannels;
+	int sampleRate;
+	int byteRate;
+	int16_t blockAlign;
+	int16_t bitsPerSample;
+
+	// Segment 3: "data" sub-chunk
         char *subChunk2ID;
-        int dataSize;
         short* fileData;
-        int subChunk1Size;
-        int byteRate; 
+	int dataSize;
 };
 
 #endif
