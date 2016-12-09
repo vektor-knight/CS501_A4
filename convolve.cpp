@@ -194,7 +194,11 @@ void overlapAdd(float* inputData, int inputSize, float* impulseData, int impulse
 	}
 
 	// Setting up padding and complex multiplication
-	float* cIn = new float[2*paddedSize]; //
+	// First code tuning: eliminate common sub-expression
+		// eg. Assignment 2*paddedSize to a variable
+
+	float padding = 2*paddedSize;
+	float* cIn = new float[padding]; //
 	float* cImpulse = new float[2*paddedSize];//
 	float* cResult = new float[2*paddedSize];//
 
