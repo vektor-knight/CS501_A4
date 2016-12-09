@@ -1,8 +1,6 @@
-// Read/write module referenced from:
-// https://raw.githubusercontent.com/rsbarhey/CPSC501-A4/master/V1.0/WaveFile.cpp
-// Strictly speaking, being able to print out the contents of a WAVE
-// file will only be used for "regression testing", insofar as making
-// sure that the optimized code is still functioning correctyl for FFT version.
+// New WaveFile.cpp for FFT-specific use case.
+// Referenced from https://raw.githubusercontent.com/rsbarhey/CPSC501-A4/master/V2.0/WaveFile.cpp
+
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -75,11 +73,24 @@ float* WaveFile::ReadInput(char *fileName, float *signal, int *Thesize)
 	*Thesize = dataSize / 2;
 	int size = dataSize / 2;
 	fileData = new short[size];
-
-	for(int j = 0 ; j < size; j++)
+	
+	int j;
+	for(j = 0 ; j < size-2; j+=3)
 	{
 		inFile.read((char*) &fileData[j], 2);
+		inFile.read((char*) &fileData[j+1], 2);
+		inFile.read((char*) &fileData[j+2], 2);
 	}
+	if(j == size-2)
+	{
+		inFile.read((char*) &fileData[size-1], 2);
+		inFile.read((char*) &fileData[size-2], 2);
+	}
+	else if(j == size-1)
+	{
+		inFile.read((char*) &fileData[size-1], 2);			
+	}
+	
 	printf("\nDone reading...now producing signal\n");
 
 	//ProduceSignal
